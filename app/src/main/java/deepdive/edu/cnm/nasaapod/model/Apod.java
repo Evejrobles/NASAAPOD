@@ -19,6 +19,24 @@ public class Apod implements Parcelable {
   @Expose
   private String explanation;
 
+  @Expose
+  private String copyright;
+
+  @Expose
+  private String url;
+
+  @Expose
+  @SerializedName("media_type")
+  private String mediaType;
+
+  @Expose
+  @SerializedName("hdurl")
+  private String hdUrl;
+
+  @Expose
+  @SerializedName("service_version")
+  private String serviceVersion;
+
   public Date getDate() {
     return date;
   }
@@ -67,12 +85,12 @@ public class Apod implements Parcelable {
     this.mediaType = mediaType;
   }
 
-  public String getHdurl() {
-    return hdurl;
+  public String getHdUrl() {
+    return hdUrl;
   }
 
-  public void setHdurl(String hdurl) {
-    this.hdurl = hdurl;
+  public void setHdUrl(String hdUrl) {
+    this.hdUrl = hdUrl;
   }
 
   public String getServiceVersion() {
@@ -83,25 +101,6 @@ public class Apod implements Parcelable {
     this.serviceVersion = serviceVersion;
   }
 
-  @Expose
-  private String copyright;
-
-  @Expose
-  private String url;
-
-  @Expose
-  @SerializedName("media_type")
-  private String mediaType;
-
-  @Expose
-  @SerializedName("hdurl")
-  private String hdurl;
-
-  @Expose
-  @SerializedName("service_version")
-  private String serviceVersion;
-
-
   @Override
   public int describeContents() {
     return 0;
@@ -109,21 +108,42 @@ public class Apod implements Parcelable {
 
   @Override
   public void writeToParcel(Parcel dest, int flags) {
-    //TODO Write fields to dest.
-
+    dest.writeLong(date.getTime());
+    dest.writeString(title);
+    dest.writeString(explanation);
+    dest.writeString(copyright);
+    dest.writeString(url);
+    dest.writeString(mediaType);
+    dest.writeString(hdUrl);
+    dest.writeString(serviceVersion);
   }
+
   private static class Creator implements Parcelable.Creator<Apod> {
 
     @Override
     public Apod createFromParcel(Parcel source) {
-      //TODO Create Apod object and populate its fields from source.
+      Apod apod = new Apod();
+      apod.date = new Date(source.readLong());
+      apod.title = source.readString();
+      apod.explanation = source.readString();
+      apod.copyright = source.readString();
+      apod.url = source.readString();
+      apod.mediaType = source.readString();
+      apod.hdUrl = source.readString();
+      apod.serviceVersion = source.readString();
       return null;
     }
 
     @Override
     public Apod[] newArray(int size) {
       return new Apod[size];
-
     }
+
   }
+
 }
+
+
+
+
+

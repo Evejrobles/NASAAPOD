@@ -31,11 +31,10 @@ import retrofit2.converter.gson.GsonConverterFactory;
 
 public class MainActivity extends AppCompatActivity {
 
-  private Date date;
-
   private static final String DATE_FORMAT = "yyyy-MM-dd";
-  private static final String CALANDER_KEY = "calender";
+  private static final String CALENDAR_KEY = "calendar";
   private static final String APOD_KEY = "apod";
+
   private WebView webView;
   private String apiKey;
   private ProgressBar progressSpinner;
@@ -54,6 +53,13 @@ public class MainActivity extends AppCompatActivity {
     setupDefaults(savedInstanceState);
   }
 
+  @Override
+  protected void onSaveInstanceState(Bundle outState) {
+    super.onSaveInstanceState(outState);
+    outState.putLong(CALENDAR_KEY, calendar.getTimeInMillis());
+    outState.putParcelable(APOD_KEY, apod);
+  }
+
   private void setupWebView() {
     webView = findViewById(R.id.web_view);
     webView.setWebViewClient(new WebViewClient() {
@@ -61,10 +67,9 @@ public class MainActivity extends AppCompatActivity {
       public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
         return false;
       }
-
       @Override
       public void onPageFinished(WebView view, String url) {
-        progressSpinner.setVisibility(View.INVISIBLE);
+        progressSpinner.setVisibility(View.GONE);
         if (apod != null) {
           Toast.makeText(MainActivity.this, apod.getTitle(), Toast.LENGTH_LONG).show();
         }
@@ -83,7 +88,7 @@ public class MainActivity extends AppCompatActivity {
     progressSpinner = findViewById(R.id.progress_spinner);
     progressSpinner.setVisibility(View.GONE);
     jumpDate = findViewById(R.id.jump_date);
-    jumpDate.setOnClickListener(v -> pickDate());
+    jumpDate.setOnClickListener((v) -> pickDate());
   }
 
   private void setupService() {
@@ -97,13 +102,20 @@ public class MainActivity extends AppCompatActivity {
         .build();
     service = retrofit.create(ApodService.class);
     apiKey = BuildConfig.API_KEY;
-
   }
 
   private void setupDefaults(Bundle savedInstanceState) {
     calendar = Calendar.getInstance();
-    // TODO Check for savedInstanceState
-    new ApodTask().execute();
+    if (savedInstanceState != null) {
+      calendar.setTimeInMillis(savedInstanceState.getLong(CALENDAR_KEY, calendar.getTimeInMillis()));
+      apod = savedInstanceState.getParcelable(APOD_KEY);
+    }
+    if (apod != null) {
+      progressSpinner.setVisibility(View.VISIBLE);
+      webView.loadUrl(apod.getUrl());
+    } else {
+      new ApodTask().execute();
+    }
   }
 
   private void pickDate() {
@@ -113,7 +125,10 @@ public class MainActivity extends AppCompatActivity {
     picker.setListener((cal) -> new ApodTask().execute(cal.getTime()));
     picker.show(getSupportFragmentManager(), picker.getClass().getSimpleName());
   }
+
   private class ApodTask extends AsyncTask<Date, Void, Apod> {
+
+    private Date date;
 
     @Override
     protected void onPreExecute() {
@@ -123,16 +138,14 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onPostExecute(Apod apod) {
       MainActivity.this.apod = apod;
-      // TODO
+      // TODO Handle hdUrl.
       webView.loadUrl(apod.getUrl());
     }
 
     @Override
     protected void onCancelled(Apod apod) {
-      Context context = MainActivity.this;
       progressSpinner.setVisibility(View.GONE);
-      Toast.makeText(context, R.string.error_message, Toast.LENGTH_LONG)
-          .show();
+      Toast.makeText(MainActivity.this, R.string.error_message, Toast.LENGTH_LONG).show();
     }
 
     @Override
@@ -145,10 +158,9 @@ public class MainActivity extends AppCompatActivity {
         if (response.isSuccessful()) {
           apod = response.body();
           calendar.setTime(date);
-
         }
       } catch (IOException e) {
-        //Do nothing apod is already null.
+        // Do nothing: apod is already null.
       } finally {
         if (apod == null) {
           cancel(true);
@@ -157,5 +169,5 @@ public class MainActivity extends AppCompatActivity {
       return apod;
     }
   }
-}
 
+}
